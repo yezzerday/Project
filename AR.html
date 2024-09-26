@@ -18,19 +18,18 @@
 
     <script>
         // ข้อมูลสถานที่ทั้งหมด (ชื่อ, พิกัด, ประเภท)
-    const locations = [
-      { name: 'Library', lat: 16.752098549614722, lng: 100.19695335116747, type: 'book' },
-      { name: 'Central Park', lat: 16.751785788751043, lng:  100.19716343372733, type: 'park' },
-      { name: 'Parking Lot', lat: 16.75175037214075,  lng: 100.19697790135913, type: 'parking' },
-      { name: 'Restaurant', lat: 16.752139126844128,  lng: 100.19691562049512, type: 'food' },
-      { name: 'Bank', lat: 16.75193716520035, lng:  100.19669057733026, type: 'bank' },
-      { name: 'Gym', lat: 16.737455358262423, lng: 100.19896605764515, type: 'gym' },
-      { name: 'Museum', lat: 16.736988862034796, lng: 100.19842089234874, type: 'museum' },
-      { name: 'Hospital', lat: 16.737478107656056, lng: 100.1992812695405, type: 'hospital' },
-      { name: 'University', lat: 16.736972925746034, lng:  100.19899656512207, type: 'education' },
-      { name: 'test2', lat: 16.75182758842014, lng: 100.19705773025863, type: 'education' },
-      { name: 'test1', lat: 16.751808077931962, lng: 100.1969277610163, type: 'education' },
-            // คุณสามารถเพิ่มข้อมูลสถานที่ได้อีกที่นี่
+        const locations = [
+            { name: 'Library', lat: 16.752098549614722, lng: 100.19695335116747, type: 'book' },
+            { name: 'Central Park', lat: 16.751785788751043, lng: 100.19716343372733, type: 'park' },
+            { name: 'Parking Lot', lat: 16.75175037214075, lng: 100.19697790135913, type: 'parking' },
+            { name: 'Restaurant', lat: 16.752139126844128, lng: 100.19691562049512, type: 'food' },
+            { name: 'Bank', lat: 16.75193716520035, lng: 100.19669057733026, type: 'bank' },
+            { name: 'Gym', lat: 16.737455358262423, lng: 100.19896605764515, type: 'gym' },
+            { name: 'Museum', lat: 16.736988862034796, lng: 100.19842089234874, type: 'museum' },
+            { name: 'Hospital', lat: 16.737478107656056, lng: 100.1992812695405, type: 'hospital' },
+            { name: 'University', lat: 16.736972925746034, lng: 100.19899656512207, type: 'education' },
+            { name: 'test2', lat: 16.75182758842014, lng: 100.19705773025863, type: 'education' },
+            { name: 'test1', lat: 16.751808077931962, lng: 100.1969277610163, type: 'education' },
         ];
 
         // ไอคอนที่ใช้ในแต่ละประเภทของสถานที่
@@ -44,13 +43,22 @@
             museum: 'image/museum.png',
             hospital: 'image/hospital.png',
             education: 'image/grad.png'
-            // เพิ่มการแมปไอคอนเพิ่มเติมสำหรับประเภทอื่นๆ ได้ที่นี่
+        };
+
+        // ฟังก์ชัน mock พิกัด GPS (เพื่อให้ไอคอนแสดงแม้จะอยู่ในห้อง)
+        navigator.geolocation.getCurrentPosition = function(success, error) {
+            success({
+                coords: {
+                    latitude: 16.751750, // กำหนดพิกัด mock ที่ต้องการ
+                    longitude: 100.197163
+                }
+            });
         };
 
         // สร้างเอนทิตี้ของสถานที่แต่ละจุดใน AR Scene
         locations.forEach(location => {
             const iconEntity = document.createElement('a-image');
-            iconEntity.setAttribute('gps-entity-place', `latitude: ${location.latitude}; longitude: ${location.longitude}`);
+            iconEntity.setAttribute('gps-entity-place', `latitude: ${location.lat}; longitude: ${location.lng}`);
             
             // ใช้ไอคอนจากการแมปประเภทที่กำหนดไว้
             const iconSrc = iconMapping[location.type] || "icons/default.png"; // ถ้าไม่เจอประเภทจะใช้ไอคอน default
@@ -66,5 +74,6 @@
 
 </body>
 </html>
+
 
 
