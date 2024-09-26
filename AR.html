@@ -1,144 +1,209 @@
-<!DOCTYPE html> 
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location Web App</title>
-    <!-- A-Frame & AR.js -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script> 
-        THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/' 
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>GeoAR.js Demo</title>
+    <script src='https://aframe.io/releases/0.9.2/aframe.min.js'></script>
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.min.js"></script>
+    <script>
+        THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
     </script>
     
-    <!-- Custom Styles -->
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #333;
-            font-size: 1.5em;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        #status {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 1em;
-            white-space: pre-line; /* ทำให้ข้อความขึ้นบรรทัดใหม่ */
-        }
-    </style>
 </head>
-<body>
+<body style='margin: 0; overflow: hidden;'>
+    <a-scene
+        cursor='rayOrigin: mouse; fuse: true; fuseTimeout: 0;'
+        raycaster="objects: [gps-entity-place];"
+        vr-mode-ui="enabled: false"
+		embedded
+		arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;'>
 
-    <!-- Loading Message -->
-    <div id="loading">กำลังค้นหาตำแหน่งของคุณ...</div>
-    <!-- Status Message -->
-    <div id="status"></div>
-
-    <!-- A-Frame Scene -->
-    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
         <a-camera gps-camera rotation-reader></a-camera>
-        <!-- AR Model -->
-        <a-entity id="ar-model" gltf-model="image/fox.gltf" rotation="0 180 0" scale="0.15 0.15 0.15" gps-entity-place="latitude: 16.751799215446834; longitude: 100.1970026220891;" visible="false" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"></a-entity>
-    </a-scene>
+	</a-scene>
 
-    <!-- JavaScript Code -->
     <script>
-        // ข้อมูลตำแหน่งของสถานที่ต่าง ๆ
-        const locations = [
-            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
-            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
-            { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552] },
-            { name: 'test2', coordinates: [100.19699859877569, 16.751810773166426], image: 'image/car.png' },
-            { name: 'test3', coordinates: [100.19697807710675, 16.75183459215997], image: 'image/pin.jpg' },
-            { name: 'test1', coordinates: [100.19707168896952, 16.751810773166465], model: 'image/fox.gltf' }
-            // เพิ่มตำแหน่งอื่น ๆ
-        ];
+        window.onload = () => {
+            // Load places from static data
+            let places = staticLoadPlaces();  // ใช้ข้อมูลพิกัดที่เตรียมไว้
+            renderPlaces(places);  // สร้างไอคอนจากพิกัดสถานที่
+        };
 
-        // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
-        if ('geolocation' in navigator) {
-            document.getElementById('loading').style.display = 'block'; // แสดงข้อความรอโหลดตำแหน่ง
-            navigator.geolocation.getCurrentPosition(function(position) {
-                document.getElementById('loading').style.display = 'none'; // ซ่อนข้อความเมื่อโหลดเสร็จสิ้น
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-                
-                // แสดงตำแหน่งของผู้ใช้ในหลายบรรทัด
-                document.getElementById('status').innerHTML = 'ตำแหน่งของคุณ:\nLatitude: ' + userLat.toFixed(4) + '\nLongitude: ' + userLon.toFixed(4);
+        // Static data loading function
+        function staticLoadPlaces() {
+            return [
+                {
+                    name: "หอสมุด",
+                    location: {
+                        lat: 16.751810773166465,
+                        lng: 100.19707168896952
+                    },
+                    type: "book"
+                },
+                {
+                    name: "สวนหย่อม",
+                    location: {
+                        lat: 16.75183459215997,
+                        lng: 100.19697807710675
+                    },
+                    type: "park"
+                },
+                {
+                    name: "test1",
+                    location: {
+                        lat: 16.75179004919567, 
+                        lng: 100.19691306466483
+                    },
+                    type: "parking"
+                },
+                {
+                    name: "test2",
+                    location: {
+                        lat: 16.75185399757452, 
+                        lng: 100.19693597468412
+                    },
+                    type: "parking"
+                },
+                {
+                    name: "รถ",
+                    location: {
+                        lat: 16.751822120330228, 
+                        lng: 100.19702598359963
+                    },
+                    type: "parking"
+                },
+                {
+                    name: "ลาน",
+                    location: {
+                        lat: 16.752136877263755,
+                        lng: 100.19691597965682
+                    },
+                    type: "parking"
+                },
+                {
+                    name: "จอดรถ",
+                    location: {
+                        lat: 16.751935684680085, 
+                        lng: 100.19670524983876
+                    },
+                    type: "food"
+                },
+                {
+                    name: "หอศิลป์",
+                    location: {
+                        lat: 16.750686757445894,
+                        lng: 100.19439673985032
+                    },
+                    type: "museum"
+                },
+                {
+                    name: "ธนาคารกรุงไทย",
+                    location: {
+                        lat:  16.737478107656056,
+                        lng: 100.1992812695405
+                    },
+                    type: "bank"
+                },
+                {
+                    name: "ฟิตเนส",
+                    location: {
+                        lat: 16.747186578738877,
+                        lng: 100.197390492671
+                    },
+                    type: "gym"
+                }
+            ];
+        }
 
-                // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
-                function calculateDistance(lat1, lon1, lat2, lon2) {
-                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
-                    const dLat = (lat2 - lat1) * Math.PI / 180;
-                    const dLon = (lon2 - lon1) * Math.PI / 180;
-                    const a = 
-                        0.5 - Math.cos(dLat)/2 + 
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                        (1 - Math.cos(dLon)) / 2;
-                    return R * 2 * Math.asin(Math.sqrt(a));
+        // Load nearby places using Google Maps API
+        function dynamicLoadPlaces(coords) {
+            let apiKey = 'AIzaSyBdiQ-7RNfSvjBz27tgZ3U495rtCe-xJCE';  // Insert your Google Maps API Key
+            let endpoint = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coords.latitude},${coords.longitude}&radius=1000&key=${apiKey}`;
+
+            return fetch(endpoint)
+                .then((res) => res.json())
+                .then((data) => {
+                    return data.results.map((place) => {
+                        return {
+                            name: place.name,
+                            location: {
+                                lat: place.geometry.location.lat,
+                                lng: place.geometry.location.lng
+                            },
+                            type: place.types[0] // Get the first type for category
+                        };
+                    });
+                })
+                .catch((err) => {
+                    console.error('Error loading places from Google API', err);
+                });
+        }
+
+        // Function to render places with different icons based on type
+        function renderPlaces(places) {
+            let scene = document.querySelector('a-scene');
+
+            places.forEach((place) => {
+                const latitude = place.location.lat;
+                const longitude = place.location.lng;
+
+                // Select icon based on place type
+                let iconSrc = '';
+                switch (place.type) {
+                    case 'book':
+                        iconSrc = 'image/book.png';
+                        break;
+                    case 'park':
+                        iconSrc = 'image/park.png';
+                        break;
+                    case 'parking':
+                        iconSrc = 'image/parking.png';
+                        break;
+                    case 'food':
+                        iconSrc = 'image/food.png';
+                        break;
+                    case 'bank':
+                        iconSrc = 'image/bank.png';
+                        break;
+                    case 'gym':
+                        iconSrc = 'image/muscle.png';
+                        break;
+                    case 'museum':
+                        iconSrc = 'image/museum.png';
+                        break;
+                    default:
+                        iconSrc = 'image/point.png'; // Default icon
                 }
 
-                // ค้นหาตำแหน่งที่อยู่ใกล้กับผู้ใช้ที่สุด
-                let closestLocation = null;
-                let closestDistance = Infinity;
+                // Create icon for each place
+                const icon = document.createElement('a-image');
+                icon.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
+                icon.setAttribute('name', place.name);
+                icon.setAttribute('src', iconSrc);
+                icon.setAttribute('scale', '20, 20');
 
-                locations.forEach(location => {
-                    const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
-                    console.log('Distance to', location.name, ':', distance, 'km');
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                        closestLocation = location;
-                    }
+                icon.addEventListener('loaded', () => window.dispatchEvent(new CustomEvent('gps-entity-place-loaded')));
+
+                icon.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+
+                    const name = ev.target.getAttribute('name');
+                    const container = document.createElement('div');
+                    container.setAttribute('id', 'place-label');
+                    container.innerHTML = `<span>${name}</span>`;
+                    document.body.appendChild(container);
+
+                    setTimeout(() => {
+                        container.remove();
+                    }, 1500);
                 });
 
-                // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
-                if (closestLocation) {
-                    const arModel = document.getElementById('ar-model');
-                    arModel.setAttribute('gps-entity-place', {
-                        latitude: closestLocation.coordinates[1],
-                        longitude: closestLocation.coordinates[0]
-                    });
-                    arModel.setAttribute('visible', 'true');
-                    document.getElementById('status').innerHTML += '\nพบสถานที่ใกล้คุณ: ' + closestLocation.name + ' (' + closestDistance.toFixed(2) + ' กม.)';
-                } else {
-                    document.getElementById('status').innerHTML += '\nไม่พบโมเดล AR ใกล้คุณ';
-                }
-
-            }, function(error) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('status').innerHTML = 'ไม่สามารถเข้าถึงตำแหน่งของคุณได้';
-                console.error('Error getting user location:', error);
+                scene.appendChild(icon);
             });
-        } else {
-            alert('Geolocation is not supported by your browser');
         }
     </script>
-    
 </body>
 </html>
+
 
