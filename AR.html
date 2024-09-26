@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Location Web App</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+</head>
+<body>
+    <a-scene vr-mode-ui="enabled: false" embedded arjs>
+        <!-- โมเดล AR ที่จะปรากฏเมื่อใกล้ตำแหน่งผู้ใช้ -->
+        <a-entity id="ar-model" gps-entity-place rotation="0 0 0" scale="1 1 1" gltf-model="fox.gltf"></a-entity>
+        
+        <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
+
+    <script>
+        // ข้อมูลตำแหน่งของสถานที่ต่าง ๆ
+        const locations = [
+            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
+            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
+            { name: 'test', coordinates: [100.19698159023042, 16.75182706176872] },
+            { name: 'test', coordinates: [100.19707149997954, 16.751818748068395] },
+            { name: 'test', coordinates: [100.19702061691768, 16.751762060453352] },
+            // เพิ่มข้อมูลตำแหน่งตามต้องการ
+        ];
+
+        // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
+
+                // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
+                function calculateDistance(lat1, lon1, lat2, lon2) {
+                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a = 
+                        0.5 - Math.cos(dLat)/2 + 
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                        (1 - Math.cos(dLon)) / 2;
+                    return R * 2 * Math.asin(Math.sqrt(a));
+                }
+
+                // ค้นหาตำแหน่งที่อยู่ใกล้กับผู้ใช้ที่สุด
+                let closestLocation = null;
+                let closestDistance = Infinity;
+
+                locations.forEach(location => {
+                    const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestLocation = location;
+                    }
+                });
+
+                // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
+                if (closestLocation) {
+                    const arModel = document.getElementById('ar-model');
+                    arModel.setAttribute('gps-entity-place', `latitude: ${closestLocation.coordinates[1]}; longitude: ${closestLocation.coordinates[0]}`);
+                    arModel.setAttribute('visible', 'true');
+                }
+            }, function(error) {
+                console.error('Error getting user location:', error);
+            });
+        } else {
+            alert('Geolocation is not supported by your browser');
+        }
+    </script>
+</body>
+</html>
