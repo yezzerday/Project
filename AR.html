@@ -1,82 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location Demo</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Location </title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .icon {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-size: contain;
+      font-size: 12px;
+      color: white;
+      text-align: center;
+    }
+
+    #camera {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-    <a-scene
-        vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true;"
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: false;">
+<body>
+  <div id="camera"></div>
 
-        <!-- กล้อง AR -->
-        <a-camera gps-camera="minDistance: 10;" rotation-reader></a-camera>
+  <script>
+    // Sample icon data
+    const locations = [
+      { name: 'Library', lat: 16.752098549614722, lng: 100.19695335116747, type: 'book' },
+      { name: 'Central Park', lat: 16.751785788751043, lng:  100.19716343372733 type: 'park' },
+      { name: 'Parking Lot', lat: 16.75175037214075,  lng: 100.19697790135913, type: 'parking' },
+      { name: 'Restaurant', lat: 16.752139126844128,  lng: 100.19691562049512, type: 'food' },
+      { name: 'Bank', lat: 16.75193716520035, lng:  100.19669057733026, type: 'bank' },
+      { name: 'Gym', lat: 16.737455358262423, lng: 100.19896605764515, type: 'gym' },
+      { name: 'Museum', lat: 16.736988862034796, lng: 100.19842089234874, type: 'museum' },
+      { name: 'Hospital', lat: 16.737478107656056, lng: 100.1992812695405, type: 'hospital' },
+      { name: 'University', lat: 16.736972925746034, lng:  100.19899656512207, type: 'education' },
+      { name: 'test2', lat: 16.75182758842014, lng: 100.19705773025863, type: 'education' },
+      { name: 'test1', lat: 16.751808077931962, lng: 100.1969277610163, type: 'education' },
+      // Add the remaining 64 locations with different types here
+    ];
 
-        <!-- ตัวอย่างการแสดงผลไอคอนและสถานที่ -->
-        <a-entity id="place-icons"></a-entity>
+    // Mapping each type to its icon image URL
+    const iconImages = {
+      book: 'image/book.png',
+      park: 'image/park.png',
+      parking: 'image/parking.png',
+      food: 'image/food.png',
+      bank: 'image/bank.png',
+      gym: 'image/muscle.png',
+      museum: 'image/museum.png',
+      hospital: 'image/hospital.png',
+      education: 'image/grad.png'
+    };
 
-    </a-scene>
+    // Function to display AR icons on the screen
+    function displayARIcons() {
+      locations.forEach(location => {
+        const icon = document.createElement('div');
+        icon.classList.add('icon');
+        icon.style.backgroundImage = `url(${iconImages[location.type]})`;
+        icon.innerHTML = `${location.name}<br>${getDistance(location.lat, location.lng)}m away`;
+        document.body.appendChild(icon);
 
-    <script>
-        // ฟังก์ชันนี้ใช้ดึงข้อมูลสถานที่
-        const places = [
-            {
-                name: "Cafe",
-                lat: 16.75185399757452, 
-                lng: 100.19693597468412
-                type: "cafe",
-                icon: "image/cafe.png"
-            },
-            {
-                name: "Restaurant",
-               lat: 16.750686757445894,
-               lng: 100.19439673985032
-                type: "food",
-                icon: "image/food.png"
-            },
-            {
-                name: "สวนหย่อม",
-                lat: 16.75179004919567, 
-                lng: 100.19691306466483
-                type: "park",
-                icon: "image/park.png"
-            }
-            
-        ];
+        // Position the icon on the screen based on GPS and orientation data (stub)
+        positionIcon(icon, location.lat, location.lng);
+      });
+    }
 
-        // เมื่อโหลดหน้าเสร็จ ให้เริ่มเรนเดอร์ไอคอนสถานที่
-        window.onload = () => {
-            renderPlaces(places);
-        };
+    // Stub to get distance between user and location (needs actual GPS)
+    function getDistance(lat, lng) {
+      // Placeholder for actual distance calculation
+      return Math.floor(Math.random() * 1000); // Replace with real distance calculation
+    }
 
-        function renderPlaces(places) {
-            const scene = document.querySelector('a-scene');
+    // Stub to position icon on the screen based on user orientation
+    function positionIcon(icon, lat, lng) {
+      // Placeholder to position icon based on lat, lng (GPS + AR logic)
+      const x = Math.random() * window.innerWidth;
+      const y = Math.random() * window.innerHeight;
+      icon.style.left = `${x}px`;
+      icon.style.top = `${y}px`;
+    }
 
-            places.forEach(place => {
-                const latitude = place.latitude;
-                const longitude = place.longitude;
+    // Initialize AR when camera permission is granted
+    function initializeAR() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          const cameraView = document.getElementById('camera');
+          cameraView.srcObject = stream;
+          cameraView.play();
 
-                const iconElement = document.createElement('a-image');
-                iconElement.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
-                iconElement.setAttribute('src', place.icon);
-                iconElement.setAttribute('scale', '10, 10');  // ขนาดไอคอน
+          displayARIcons(); // Show AR icons after camera starts
+        })
+        .catch(err => {
+          console.error("Error accessing camera: ", err);
+        });
+    }
 
-                // คลิกที่ไอคอนเพื่อแสดงชื่อสถานที่
-                iconElement.addEventListener('click', (ev) => {
-                    const name = place.name;
-                    alert(`This is ${name}`);
-                });
-
-                scene.appendChild(iconElement);
-            });
-        }
-    </script>
+    // Initialize AR app on page load
+    window.onload = () => {
+      initializeAR();
+    };
+  </script>
 </body>
 </html>
+
 
 
