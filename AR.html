@@ -7,13 +7,22 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
-    <a-scene vr-mode-ui="enabled: false" embedded arjs>
+    <a-scene vr-mode-ui="enabled: false" embedded arjs='sourceType: webcam; debugUIEnabled: false;'>
         <!-- โมเดล AR ที่จะปรากฏเมื่อใกล้ตำแหน่งผู้ใช้ -->
-        <a-entity id="ar-model" gps-entity-place rotation="0 0 0" scale="1 1 1" gltf-model="fox.gltf"></a-entity>
+        <a-entity id="ar-model" gps-entity-place rotation="0 0 0" scale="0.2 0.2 0.2" visible="false" gltf-model="image/fox.gltf"></a-entity>
         
-        <a-camera gps-camera rotation-reader></a-camera>
+        <a-camera gps-camera="gpsMinDistance: 5; gpsTimeInterval: 5000;" rotation-reader></a-camera>
     </a-scene>
 
     <script>
@@ -21,10 +30,18 @@
         const locations = [
             { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
             { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
+            { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552] },
+            { name: 'พิพิธภัณฑ์ผ้า', coordinates: [100.19368528595756, 16.750747650743115] },
+            { name: 'หอพักนิสิต 1-9', coordinates: [100.19920506247398, 16.736488954997554] },
+            { name: 'หอพักนิสิต 10-15', coordinates: [100.20002954791143, 16.737361857468215] },
+            { name: 'ศูนย์อาหาร NU Canteen', coordinates: [100.19349481924687, 16.744141844488965] },
+            { name: 'โรงอาหารหอใน', coordinates: [100.19896605764515, 16.737455358262423] },
+            { name: 'ลานจอดรถ ใกล้ศูนย์หนังสือ', coordinates: [100.19363458145814, 16.744872718523496] },
+            { name: 'ลานจอดรถ ใกล้โรงพยาบาล', coordinates: [100.18931709684061, 16.749730393172033] },
+            { name: 'ลานจอดรถ ใกล้คณะพยาบาล', coordinates: [100.18975791382513, 16.7457527358264] },
             { name: 'test', coordinates: [100.19698159023042, 16.75182706176872] },
             { name: 'test', coordinates: [100.19707149997954, 16.751818748068395] },
-            { name: 'test', coordinates: [100.19702061691768, 16.751762060453352] },
-            // เพิ่มข้อมูลตำแหน่งตามต้องการ
+            { name: 'test', coordinates: [100.19702061691768, 16.751762060453352] }
         ];
 
         // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
@@ -32,6 +49,8 @@
             navigator.geolocation.getCurrentPosition(function(position) {
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
+                console.log('User Latitude:', userLat);
+                console.log('User Longitude:', userLon);
 
                 // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
                 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -51,6 +70,7 @@
 
                 locations.forEach(location => {
                     const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
+                    console.log('Distance to', location.name, ':', distance, 'km');
                     if (distance < closestDistance) {
                         closestDistance = distance;
                         closestLocation = location;
@@ -60,8 +80,12 @@
                 // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
                 if (closestLocation) {
                     const arModel = document.getElementById('ar-model');
-                    arModel.setAttribute('gps-entity-place', `latitude: ${closestLocation.coordinates[1]}; longitude: ${closestLocation.coordinates[0]}`);
+                    arModel.setAttribute('gps-entity-place', {
+                        latitude: closestLocation.coordinates[1],
+                        longitude: closestLocation.coordinates[0]
+                    });
                     arModel.setAttribute('visible', 'true');
+                    console.log('Showing AR Model at:', closestLocation.coordinates);
                 }
             }, function(error) {
                 console.error('Error getting user location:', error);
@@ -70,5 +94,7 @@
             alert('Geolocation is not supported by your browser');
         }
     </script>
+    
 </body>
 </html>
+
