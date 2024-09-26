@@ -1,104 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Location </title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
-  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; }
-    .icon {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      background-size: contain;
-      font-size: 12px;
-      color: white;
-      text-align: center;
-    }
-    #camera {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Location App</title>
+    <!-- Import A-Frame and AR.js -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/master/aframe/build/aframe-ar.min.js"></script>
 </head>
-<body>
+<body style="margin: 0; overflow: hidden;">
 
-<a-scene embedded arjs>
-  <a-marker-camera preset="hiro"></a-marker-camera>
+    <!-- AR.js Scene -->
+    <a-scene embedded arjs="sourceType: webcam;">
+        <!-- GPS Camera -->
+        <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
 
-  <!-- Sample 3D icons for AR -->
-  <a-entity id="bookIcon" geometry="primitive: box" material="color: red" position="0 0 -3"></a-entity>
-  <a-entity id="parkIcon" geometry="primitive: box" material="color: green" position="2 0 -3"></a-entity>
-  
-  <!-- Add more AR icons as needed -->
+    <script>
+        // ข้อมูลสถานที่ทั้งหมด (ชื่อ, พิกัด, ประเภท)
+    const locations = [
+      { name: 'Library', lat: 16.752098549614722, lng: 100.19695335116747, type: 'book' },
+      { name: 'Central Park', lat: 16.751785788751043, lng:  100.19716343372733, type: 'park' },
+      { name: 'Parking Lot', lat: 16.75175037214075,  lng: 100.19697790135913, type: 'parking' },
+      { name: 'Restaurant', lat: 16.752139126844128,  lng: 100.19691562049512, type: 'food' },
+      { name: 'Bank', lat: 16.75193716520035, lng:  100.19669057733026, type: 'bank' },
+      { name: 'Gym', lat: 16.737455358262423, lng: 100.19896605764515, type: 'gym' },
+      { name: 'Museum', lat: 16.736988862034796, lng: 100.19842089234874, type: 'museum' },
+      { name: 'Hospital', lat: 16.737478107656056, lng: 100.1992812695405, type: 'hospital' },
+      { name: 'University', lat: 16.736972925746034, lng:  100.19899656512207, type: 'education' },
+      { name: 'test2', lat: 16.75182758842014, lng: 100.19705773025863, type: 'education' },
+      { name: 'test1', lat: 16.751808077931962, lng: 100.1969277610163, type: 'education' },
+            // คุณสามารถเพิ่มข้อมูลสถานที่ได้อีกที่นี่
+        ];
 
-</a-scene>
+        // ไอคอนที่ใช้ในแต่ละประเภทของสถานที่
+        const iconMapping = {
+            book: 'image/book.png',
+            park: 'image/park.png',
+            parking: 'image/parking.png',
+            food: 'image/food.png',
+            bank: 'image/bank.png',
+            gym: 'image/muscle.png',
+            museum: 'image/museum.png',
+            hospital: 'image/hospital.png',
+            education: 'image/grad.png'
+            // เพิ่มการแมปไอคอนเพิ่มเติมสำหรับประเภทอื่นๆ ได้ที่นี่
+        };
 
-<script>
-  // GPS locations (just a sample, replace with real ones)
-  const locations = [
-    { name: 'Library', lat: lat: 16.75182758842014, lng: 100.19705773025863, type: 'book', entityId: 'bookIcon' },
-    { name: 'Central Park', lat: 16.751808077931962, lng: 100.1969277610163, type: 'park', entityId: 'parkIcon' },
-    // Add more locations as needed
-  ];
+        // สร้างเอนทิตี้ของสถานที่แต่ละจุดใน AR Scene
+        locations.forEach(location => {
+            const iconEntity = document.createElement('a-image');
+            iconEntity.setAttribute('gps-entity-place', `latitude: ${location.latitude}; longitude: ${location.longitude}`);
+            
+            // ใช้ไอคอนจากการแมปประเภทที่กำหนดไว้
+            const iconSrc = iconMapping[location.type] || "icons/default.png"; // ถ้าไม่เจอประเภทจะใช้ไอคอน default
+            iconEntity.setAttribute('src', iconSrc);
 
-  function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+            iconEntity.setAttribute('scale', '5 5 5'); // ขนาดของไอคอน
+            iconEntity.setAttribute('position', '0 2 0'); // ตำแหน่งไอคอนให้ลอย
+            iconEntity.setAttribute('look-at', '[gps-camera]'); // ให้ไอคอนหมุนตามกล้อง
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return (R * c).toFixed(0); // Return distance in meters
-  }
-
-  function updateARIcons(userLat, userLng) {
-    locations.forEach(location => {
-      const distance = getDistance(userLat, userLng, location.lat, location.lng);
-      const icon = document.getElementById(location.entityId);
-      if (icon) {
-        icon.setAttribute('position', `0 0 -${distance / 100}`); // Adjust AR icon distance based on GPS
-        console.log(`${location.name}: ${distance} meters away`);
-      }
-    });
-  }
-
-  // Function to get user's location and update AR
-  function initializeAR() {
-    navigator.geolocation.getCurrentPosition(position => {
-      const userLat = position.coords.latitude;
-      const userLng = position.coords.longitude;
-      updateARIcons(userLat, userLng);
-    });
-
-    // Listen to device orientation for real-time AR icon positioning
-    window.addEventListener('deviceorientation', event => {
-      const alpha = event.alpha; // Yaw
-      const beta = event.beta;   // Pitch
-      const gamma = event.gamma; // Roll
-      console.log(`Yaw: ${alpha}, Pitch: ${beta}, Roll: ${gamma}`);
-      // Use alpha, beta, gamma to adjust AR icon rotation or direction if needed
-    });
-  }
-
-  window.onload = () => {
-    initializeAR();
-  };
-</script>
+            document.querySelector('a-scene').appendChild(iconEntity);
+        });
+    </script>
 
 </body>
 </html>
-
 
 
