@@ -6,7 +6,6 @@
     <title>Main Menu</title>
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css"> 
     <style>
-        
         * {
             margin: 0;
             padding: 0;
@@ -29,7 +28,10 @@
 
         .container {
             text-align: center;
-            position: relative;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 100%;
             max-width: 400px;
         }
@@ -51,6 +53,8 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            justify-content: center;
+            align-items: center;
         }
 
         .menu-btn {
@@ -71,7 +75,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.507); 
         }
 
-        
         .menu-btn i {
             margin-left: 10px;
             font-size: 24px;
@@ -126,3 +129,4 @@
     </script>
 </body>
 </html>
+
