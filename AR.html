@@ -1,14 +1,12 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location Web App</title>
+    <title>AR Location </title>
     <!-- A-Frame & AR.js -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script> THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'</script>
     
     <!-- Custom Styles -->
     <style>
@@ -22,7 +20,6 @@
             justify-content: center;
             align-items: center;
             background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
         }
 
         #loading {
@@ -46,7 +43,6 @@
             color: #fff;
             padding: 5px 10px;
             border-radius: 5px;
-            font-size: 1em;
         }
     </style>
 </head>
@@ -58,43 +54,35 @@
     <div id="status"></div>
 
     <!-- A-Frame Scene -->
-    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
+    <a-scene vr-mode-ui="enabled: false" arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false" renderer="antialias: true; alpha: true">
         <a-camera gps-camera rotation-reader></a-camera>
-        <!-- AR Model -->
-        <a-entity id="ar-model" gltf-model="image/fox.gltf" rotation="0 180 0" scale="0.15 0.15 0.15" gps-entity-place="latitude: 16.751799215446834; longitude: 100.1970026220891;" visible="false" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"></a-entity>
+
+        <!-- AR Models: ปรับให้เลือกโมเดลตามสถานที่ -->
+        <a-entity id="ar-model" visible="false"></a-entity>
     </a-scene>
 
     <!-- JavaScript Code -->
     <script>
-        // ข้อมูลตำแหน่งของสถานที่ต่าง ๆ
         const locations = [
-            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
-            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
-            { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552] },
-            { name: 'พิพิธภัณฑ์ผ้า', coordinates: [100.19368528595756, 16.750747650743115] },
-            { name: 'หอพักนิสิต 1-9', coordinates: [100.19920506247398, 16.736488954997554] },
-            { name: 'หอพักนิสิต 10-15', coordinates: [100.20002954791143, 16.737361857468215] },
-            { name: 'ศูนย์อาหาร NU Canteen', coordinates: [100.19349481924687, 16.744141844488965] },
-            { name: 'โรงอาหารหอใน', coordinates: [100.19896605764515, 16.737455358262423] },
-            { name: 'ลานจอดรถ ใกล้ศูนย์หนังสือ', coordinates: [100.19363458145814, 16.744872718523496] },
-            { name: 'ลานจอดรถ ใกล้โรงพยาบาล', coordinates: [100.18931709684061, 16.749730393172033] },
-            { name: 'ลานจอดรถ ใกล้คณะพยาบาล', coordinates: [100.18975791382513, 16.7457527358264] },
-            { name: 'test2', coordinates: [100.19699859877569, 16.751810773166426] },
-            { name: 'test1', coordinates: [100.19707168896952, 16.751810773166465] }
+            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577], model: 'image/model1.gltf' },
+            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877], model: 'image/model2.gltf' },
+            { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552], image: 'image/pic1.jpg' },
+            { name: 'พิพิธภัณฑ์ผ้า', coordinates: [100.19368528595756, 16.750747650743115], image: 'image/pic2.jpg' }
+            // เพิ่มโมเดลหรือรูปภาพสำหรับสถานที่อื่น ๆ ได้ที่นี่
         ];
 
         // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
         if ('geolocation' in navigator) {
-            document.getElementById('loading').style.display = 'block'; // แสดงข้อความรอโหลดตำแหน่ง
+            document.getElementById('loading').style.display = 'block'; 
             navigator.geolocation.getCurrentPosition(function(position) {
-                document.getElementById('loading').style.display = 'none'; // ซ่อนข้อความเมื่อโหลดเสร็จสิ้น
+                document.getElementById('loading').style.display = 'none'; 
                 const userLat = position.coords.latitude;
                 const userLon = position.coords.longitude;
-                document.getElementById('status').innerHTML = 'ตำแหน่งของคุณ: ' + userLat.toFixed(6) + ', ' + userLon.toFixed(6);
+                document.getElementById('status').innerHTML = 'ตำแหน่งของคุณ: ' + userLat.toFixed(4) + ', ' + userLon.toFixed(4);
 
-                // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
+                // ฟังก์ชันคำนวณระยะห่าง
                 function calculateDistance(lat1, lon1, lat2, lon2) {
-                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+                    const R = 6371; 
                     const dLat = (lat2 - lat1) * Math.PI / 180;
                     const dLon = (lon2 - lon1) * Math.PI / 180;
                     const a = 
@@ -104,28 +92,34 @@
                     return R * 2 * Math.asin(Math.sqrt(a));
                 }
 
-                // ค้นหาตำแหน่งที่อยู่ใกล้กับผู้ใช้ที่สุด
+                // ค้นหาตำแหน่งที่อยู่ใกล้ที่สุด
                 let closestLocation = null;
                 let closestDistance = Infinity;
 
                 locations.forEach(location => {
                     const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
-                    console.log('Distance to', location.name, ':', distance, 'km');
                     if (distance < closestDistance) {
                         closestDistance = distance;
                         closestLocation = location;
                     }
                 });
 
-                // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
+                // ตั้งโมเดลหรือรูปภาพให้ตรงกับสถานที่
                 if (closestLocation) {
                     const arModel = document.getElementById('ar-model');
+                    if (closestLocation.model) {
+                        arModel.setAttribute('gltf-model', closestLocation.model);
+                        arModel.setAttribute('scale', '0.15 0.15 0.15');
+                    } else if (closestLocation.image) {
+                        arModel.setAttribute('geometry', 'primitive: plane; height: 2; width: 2');
+                        arModel.setAttribute('material', `src: url(${closestLocation.image})`);
+                    }
                     arModel.setAttribute('gps-entity-place', {
                         latitude: closestLocation.coordinates[1],
                         longitude: closestLocation.coordinates[0]
                     });
                     arModel.setAttribute('visible', 'true');
-                    document.getElementById('status').innerHTML = 'พบโมเดล AR ใกล้คุณ: ' + closestLocation.name + ' (' + closestDistance.toFixed(2) + ' กม.)';
+                    document.getElementById('status').innerHTML = 'พบสถานที่ใกล้คุณ: ' + closestLocation.name + ' (' + closestDistance.toFixed(2) + ' กม.)';
                 } else {
                     document.getElementById('status').innerHTML = 'ไม่พบโมเดล AR ใกล้คุณ';
                 }
@@ -133,7 +127,6 @@
             }, function(error) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('status').innerHTML = 'ไม่สามารถเข้าถึงตำแหน่งของคุณได้';
-                console.error('Error getting user location:', error);
             });
         } else {
             alert('Geolocation is not supported by your browser');
@@ -142,5 +135,4 @@
     
 </body>
 </html>
-
 
