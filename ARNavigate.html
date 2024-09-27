@@ -1,107 +1,77 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AR Navigation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- A-Frame and AR.js libraries -->
+    <!-- Import AR.js library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
+    <!-- Import Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet" />
     <style>
         body, html {
             margin: 0;
             padding: 0;
-            width: 100%;
             height: 100%;
+            width: 100%;
             overflow: hidden;
-        }
-        #instructions {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 1;
         }
     </style>
 </head>
 <body>
-    <div id="instructions">หันกล้องของคุณเพื่อค้นหาทาง AR</div>
-
-    <a-scene vr-mode-ui="enabled: false" embedded arjs="trackingMethod: gps; sourceType: webcam; debugUIEnabled: false;">
-        <!-- AR Camera with GPS -->
+    <!-- AR.js Scene -->
+    <a-scene vr-mode-ui="enabled: false" embedded arjs>
+        <!-- Define the camera -->
         <a-camera gps-camera rotation-reader></a-camera>
 
-        <!-- Placeholder for AR Navigation path -->
-        <a-box id="nav-box" gps-entity-place="latitude: 0; longitude: 0;" material="color: red; opacity: 0.8;" scale="1 1 1"></a-box>
+        <!-- 3D arrow for navigation -->
+        <a-box gps-entity-place="latitude: 0; longitude: 0;" material="color: red;" scale="1 1 1"></a-box>
     </a-scene>
 
     <script>
-        // ดึงข้อมูลปลายทางที่เก็บไว้ใน LocalStorage
-        const destination = JSON.parse(localStorage.getItem('destination'));
+        mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';  // ใช้ Access Token ของคุณเอง
 
-        if (destination) {
-            const destLat = destination.coordinates[1];
-            const destLng = destination.coordinates[0];
+        // Get user's current location
+        navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {
+            enableHighAccuracy: true
+        });
 
-            // ตั้งค่า GPS ของกล่อง AR
-            document.getElementById('nav-box').setAttribute('gps-entity-place', `latitude: ${destLat}; longitude: ${destLng}`);
-        } else {
-            alert('ไม่มีข้อมูลปลายทาง โปรดกลับไปที่หน้าแรกเพื่อเลือกสถานที่ใหม่');
+        function successLocation(position) {
+            const userCoords = [position.coords.longitude, position.coords.latitude];
+
+            // Get destination from localStorage
+            const destinationData = JSON.parse(localStorage.getItem('destination'));
+            const destinationCoords = destinationData.coordinates;
+
+            // Fetch directions from Mapbox Directions API
+            fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${userCoords[0]},${userCoords[1]};${destinationCoords[0]},${destinationCoords[1]}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`
+            )
+                .then(response => response.json())
+                .then(data => {
+                    const route = data.routes[0].geometry.coordinates;
+                    render3DPath(route);
+                });
         }
 
-        // อ่านค่าการหมุนของกล้องเพื่อบอกทิศทาง
-        AFRAME.registerComponent('rotation-reader', {
-            tick: function () {
-                // หมุนกล่อง AR ตามมุมของกล้อง
-                const cameraRotation = this.el.getAttribute('rotation');
-                const navBox = document.getElementById('nav-box');
+        function errorLocation() {
+            alert('Unable to retrieve your location');
+        }
 
-                if (navBox) {
-                    navBox.object3D.rotation.set(
-                        THREE.Math.degToRad(0),
-                        THREE.Math.degToRad(cameraRotation.y + 90),  // หมุน 90 องศา เพื่อให้ชี้ไปที่จุดหมาย
-                        THREE.Math.degToRad(0)
-                    );
-                }
-            }
-        });
+        function render3DPath(coordinates) {
+            coordinates.forEach(coord => {
+                const latitude = coord[1];
+                const longitude = coord[0];
 
-        // ตั้งค่าการแสดงผลของกล่องนำทาง AR ตามระยะทาง
-        AFRAME.registerComponent('distance-display', {
-            schema: {
-                latitude: { type: 'number' },
-                longitude: { type: 'number' }
-            },
-            init: function () {
-                // อัปเดตตำแหน่งของกล่องนำทาง
-                const userPosition = this.el.sceneEl.camera.el.components['gps-camera'].currentCoords;
-                const distance = calculateDistance(userPosition.latitude, userPosition.longitude, this.data.latitude, this.data.longitude);
-
-                if (distance < 10) {  // ปรับความใกล้ไกลของการแสดงผล
-                    this.el.setAttribute('visible', true);
-                } else {
-                    this.el.setAttribute('visible', false);
-                }
-            }
-        });
-
-        // คำนวณระยะทางระหว่างสองจุดโดยใช้ Haversine formula
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            function toRad(x) {
-                return x * Math.PI / 180;
-            }
-            const R = 6371;  // รัศมีโลกเป็นกิโลเมตร
-            const dLat = toRad(lat2 - lat1);
-            const dLon = toRad(lon2 - lon1);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            const d = R * c; // ระยะทางเป็นกิโลเมตร
-            return d;
+                // Create 3D box (representing the path) in AR.js
+                const box = document.createElement('a-box');
+                box.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
+                box.setAttribute('material', 'color: blue; opacity: 0.8;');
+                box.setAttribute('scale', '1 1 1');
+                document.querySelector('a-scene').appendChild(box);
+            });
         }
     </script>
 </body>
