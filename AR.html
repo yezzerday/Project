@@ -3,137 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR </title>
-    <!-- A-Frame สำหรับสร้างและแสดงผล AR -->
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <!-- AR.js สำหรับใช้งาน AR บน A-Frame ด้วย GPS -->
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <title>AR Location Web App</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
 </head>
-<body style="margin: 0; overflow: hidden;">
-    <!-- เริ่มต้นฉากของ A-Frame -->
-    <a-scene
-        vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true;"
-        embedded
-        arjs="sourceType: webcam; debugUIEnabled: false;">
+<body>
+    <a-scene vr-mode-ui="enabled: false" embedded arjs>
+        <!-- โมเดล AR ที่จะปรากฏเมื่อใกล้ตำแหน่งผู้ใช้ -->
+        <a-entity id="ar-model" gps-entity-place rotation="0 0 0" scale="1 1 1" gltf-model="path/to/your_model.gltf"></a-entity>
         
-        <!-- กล้อง AR ที่ใช้ตำแหน่ง GPS -->
-        <a-camera gps-camera="gpsMinDistance: 10;"></a-camera>
-
-        <!-- สถานที่จะแสดงที่นี่ -->
-        <a-entity id="places-icons"></a-entity>
-
+        <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
-        // ฟังก์ชันดึงข้อมูลสถานที่ (คุณสามารถเพิ่มสถานที่ตามข้อมูลที่คุณมี)
-        const places = [
-            {
-                name: "Cafe",
-                latitude: 16.75216255070639, 
-                longitude: 100.19692711250192,
-                type: "cafe",  // ประเภทของสถานที่
-                icon: "image/cafe.png"  // ไอคอนสำหรับสถานที่
-            },
-            {
-                name: "Restaurant",
-                latitude: 16.751980533811853, 
-                longitude:100.19671114681755,
-                type: "food",
-                icon: "image/food.png"
-            },
-            {
-                name: "Gym",
-                latitude: 16.751814013338517, 
-                longitude:100.19692565632594,
-                type: "gym",
-                icon: "image/muscle.png"
-            },
-            {
-                name: "Hospital",
-                latitude:16.751840826512645,
-                longitude:  100.19705314160306,
-                type: "hospital",
-                icon: "image/hospital.png"
-            },
-            // เพิ่มสถานที่อื่น ๆ ตามข้อมูลที่คุณมี
+        // ข้อมูลตำแหน่งของสถานที่ต่าง ๆ
+        const locations = [
+            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
+            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
+            // เพิ่มข้อมูลตำแหน่งตามต้องการ
         ];
 
-        // คำนวณระยะทางระหว่างผู้ใช้กับสถานที่ (ใช้สูตร Haversine Formula)
-        function calculateDistance(userCoords, placeCoords) {
-            const toRadian = angle => (Math.PI / 180) * angle;
-            const distance = (a, b) => (Math.PI / 180) * (a - b);
-            const RADIUS_OF_EARTH_IN_KM = 6371;
+        // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
 
-            const dLat = distance(placeCoords.lat, userCoords.lat);
-            const dLon = distance(placeCoords.lng, userCoords.lng);
+                // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
+                function calculateDistance(lat1, lon1, lat2, lon2) {
+                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a = 
+                        0.5 - Math.cos(dLat)/2 + 
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                        (1 - Math.cos(dLon)) / 2;
+                    return R * 2 * Math.asin(Math.sqrt(a));
+                }
 
-            const lat1 = toRadian(userCoords.lat);
-            const lat2 = toRadian(placeCoords.lat);
+                // ค้นหาตำแหน่งที่อยู่ใกล้กับผู้ใช้ที่สุด
+                let closestLocation = null;
+                let closestDistance = Infinity;
 
-            const a =
-                Math.pow(Math.sin(dLat / 2), 2) +
-                Math.pow(Math.sin(dLon / 2), 2) *
-                Math.cos(lat1) *
-                Math.cos(lat2);
-
-            const c = 2 * Math.asin(Math.sqrt(a));
-            const distanceInKm = RADIUS_OF_EARTH_IN_KM * c;
-
-            return distanceInKm.toFixed(2);
-        }
-
-        // ฟังก์ชันสำหรับแสดงไอคอนของสถานที่ใน AR
-        window.onload = () => {
-            renderPlaces(places);
-        };
-
-        function renderPlaces(places) {
-            const scene = document.querySelector('a-scene');  // เลือก scene ที่จะใส่ไอคอน
-
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userCoords = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-
-                places.forEach(place => {
-                    const latitude = place.latitude;
-                    const longitude = place.longitude;
-                    const distance = calculateDistance(userCoords, { lat: latitude, lng: longitude });
-
-                    // สร้าง element หลักที่จะใส่ไอคอนและข้อความ
-                    const placeEntity = document.createElement('a-entity');
-                    placeEntity.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
-                    placeEntity.setAttribute('look-at', '[gps-camera]'); // ให้ entity ทั้งหมดหันเข้าหากล้อง
-
-                    // ไอคอนสถานที่
-                    const icon = document.createElement('a-image');
-                    icon.setAttribute('src', place.icon);
-                    icon.setAttribute('scale', '2 2'); // ปรับขนาดของไอคอน
-                    icon.setAttribute('position', '0 0 -5'); // ปรับตำแหน่งให้ห่างกล้องน้อยลง
-                    // icon.setAttribute('look-at', '[gps-camera]'); // นำออกเพราะใช้ใน entity หลักแล้ว
-
-                    // ข้อความชื่อสถานที่และระยะทาง
-                    const textLabel = document.createElement('a-text');
-                    textLabel.setAttribute('value', `${place.name} (${distance} km)`);
-                    textLabel.setAttribute('align', 'center');
-                    textLabel.setAttribute('position', '0 -1.5 -5');  // ปรับตำแหน่งให้อยู่ใต้ไอคอน
-                    textLabel.setAttribute('scale', '5 5'); // ปรับขนาดของข้อความ
-                    // textLabel.setAttribute('look-at', '[gps-camera]'); // นำออกเพราะใช้ใน entity หลักแล้ว
-
-                    // เพิ่มไอคอนและข้อความเข้าใน entity หลัก
-                    placeEntity.appendChild(icon);
-                    placeEntity.appendChild(textLabel);
-
-                    // เพิ่ม entity ของสถานที่ใน scene
-                    scene.appendChild(placeEntity);  
+                locations.forEach(location => {
+                    const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestLocation = location;
+                    }
                 });
-            }, (err) => {
-                console.error("ตำแหน่งไม่สามารถใช้งานได้: ", err);
-                alert("ไม่สามารถเข้าถึงตำแหน่งของคุณได้ กรุณาเปิดใช้งาน GPS");
+
+                // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
+                if (closestLocation) {
+                    const arModel = document.getElementById('ar-model');
+                    arModel.setAttribute('gps-entity-place', `latitude: ${closestLocation.coordinates[1]}; longitude: ${closestLocation.coordinates[0]}`);
+                    arModel.setAttribute('visible', 'true');
+                }
+            }, function(error) {
+                console.error('Error getting user location:', error);
             });
+        } else {
+            alert('Geolocation is not supported by your browser');
         }
     </script>
 </body>
 </html>
+
