@@ -4,20 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Navigation</title>
-    <!-- A-Frame and AR.js Libraries -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-gps-camera@1.7.2/dist/aframe-gps-camera.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-gps-entity-place@1.8.0/dist/aframe-gps-entity-place.min.js"></script>
-    
-    <!-- Mapbox Libraries -->
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
 
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; }
-
-        /* Style for top bar */
         .top-bar {
             position: absolute;
             top: 0;
@@ -30,9 +25,8 @@
             justify-content:center;
             padding: 0 10px;
             z-index: 10;
+            font-size: 24px;
         }
-
-        /* Style for bottom bar */
         .bottom-bar {
             position: absolute;
             bottom: 0;
@@ -44,10 +38,7 @@
             align-items: center;
             justify-content: center;
             z-index: 10;
-            transition: transform 0.3s ease;
         }
-
-        /* Style for minimap */
         #map {
             width: 100px;
             height: 100px;
@@ -56,40 +47,17 @@
             z-index: 20;
             margin-top: 10px;
         }
-
-        /* Style for distance information */
         .distance-info {
             color: white;
             font-size: 20px;
         }
-
-        /* Style for mobile devices */
-        @media (max-width: 768px) {
-            .top-bar { height: 60px; }
-            .bottom-bar { height: 120px; }
-            .distance-info { font-size: 16px; }
-        }
-
-        /* Style for PC devices */
-        @media (min-width: 769px) {
-            .top-bar { height: 70px; }
-            .bottom-bar { height: 150px; }
-            .distance-info { font-size: 24px; }
-        }
-
-        /* Hide the bottom bar by default */
-        .bottom-bar.hidden {
-            transform: translateY(100%);
-        }
     </style>
 </head>
 <body>
-    <!-- AR Scene -->
     <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam;">
         <a-camera gps-camera rotation-reader></a-camera>
-        
         <a-entity id="arrow" 
-                  gltf-model="image/arrow.gltf" 
+                  gltf-model="arrow.gltf" 
                   scale="2 2 2" 
                   gps-entity-place 
                   rotation="0 180 0"
@@ -97,14 +65,11 @@
         </a-entity>
     </a-scene>
 
-    <!-- Top Bar -->
     <div class="top-bar">
-        <div id="status-icon" ></div>
         <h1 id="status-text">Go straight</h1>
     </div>
 
-    <!-- Bottom Bar with minimap -->
-    <div class="bottom-bar hidden" id="bottom-bar">
+    <div class="bottom-bar" id="bottom-bar">
         <div class="distance-info" id="distance">Distance: -- m</div>
         <div id="map"></div>
     </div>
@@ -131,81 +96,70 @@
 
         // User position from GPS
         navigator.geolocation.getCurrentPosition(function(position) {
-            var userLat = position.coords.latitude;
-            var userLng = position.coords.longitude;
+            var userLatitude = position.coords.latitude;
+            var userLongitude = position.coords.longitude;
 
             new mapboxgl.Marker({ color: 'blue' })
-                .setLngLat([userLng, userLat])
+                .setLngLat([userLongitude, userLatitude])
                 .addTo(map);
 
-            map.setCenter([userLng, userLat]);
+            map.setCenter([userLongitude, userLatitude]);
         });
 
         // Update user position in real-time
         navigator.geolocation.watchPosition(function(position) {
-            var userLat = position.coords.latitude;
-            var userLng = position.coords.longitude;
+            var userLatitude = position.coords.latitude;
+            var userLongitude = position.coords.longitude;
 
-            map.setCenter([userLng, userLat]);
+            map.setCenter([userLongitude, userLatitude]);
 
-            var distance = calculateDistance(userLat, userLng, destinationLat, destinationLng);
+            var distance = calculateDistance(userLatitude, userLongitude, destinationLat, destinationLng);
             document.getElementById('distance').textContent = `Distance: ${distance.toFixed(2)} meters`;
 
-            // Update route status
-            updateStatus(userLat, userLng, destinationLat, destinationLng);
-
-            document.getElementById('bottom-bar').classList.remove('hidden');
+            updateStatus(userLatitude, userLongitude, destinationLat, destinationLng);
         });
 
         // Calculate distance using Haversine formula
-        function calculateDistance(lat1, lng1, lat2, lng2) {
+        function calculateDistance(lat1, lon1, lat2, lon2) {
             var R = 6371e3; // Earth radius in meters
-            var lat1Rad = degreesToRadians(lat1);
-            var lat2Rad = degreesToRadians(lat2);
-            var diffLat = degreesToRadians(lat2 - lat1);
-            var diffLng = degreesToRadians(lng2 - lng1);
+            var radLat1 = lat1 * Math.PI/180;
+            var radLat2 = lat2 * Math.PI/180;
+            var deltaLat = (lat2-lat1) * Math.PI/180;
+            var deltaLon = (lon2-lon1) * Math.PI/180;
 
-            var a = Math.sin(diffLat / 2) * Math.sin(diffLat / 2) +
-                    Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-                    Math.sin(diffLng / 2) * Math.sin(diffLng / 2);
-            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            var a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                    Math.cos(radLat1) * Math.cos(radLat2) *
+                    Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
             return R * c;
         }
 
-        function degreesToRadians(degrees) {
-            return degrees * Math.PI / 180;
-        }
-
         // Update route status
         function updateStatus(userLat, userLng, destinationLat, destinationLng) {
-            var angle = calculateBearing(userLat, userLng, destinationLat, destinationLng);
+            var bearing = calculateBearing(userLat, userLng, destinationLat, destinationLng);
 
-            if (angle >= -45 && angle < 45) {
+            if (bearing >= -45 && bearing < 45) {
                 document.getElementById('status-text').textContent = 'Go straight';
-                document.getElementById('status-icon').innerHTML = '<img src="image/straight.png" alt="Go straight" />';
-            } else if (angle >= 45 && angle < 135) {
+            } else if (bearing >= 45 && bearing < 135) {
                 document.getElementById('status-text').textContent = 'Turn left';
-                document.getElementById('status-icon').innerHTML = '<img src="image/left.png" alt="Turn left" />';
             } else {
                 document.getElementById('status-text').textContent = 'Turn right';
-                document.getElementById('status-icon').innerHTML = '<img src="image/right.png" alt="Turn right" />';
             }
         }
 
         // Calculate bearing angle
-        function calculateBearing(lat1, lng1, lat2, lng2) {
-            var lat1Rad = degreesToRadians(lat1);
-            var lat2Rad = degreesToRadians(lat2);
-            var diffLng = degreesToRadians(lng2 - lng1);
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            var radLat1 = lat1 * Math.PI/180;
+            var radLat2 = lat2 * Math.PI/180;
+            var deltaLon = (lon2-lon1) * Math.PI/180;
 
-            var y = Math.sin(diffLng) * Math.cos(lat2Rad);
-            var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - 
-                    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(diffLng);
-            var bearing = Math.atan2(y, x) * 180 / Math.PI;
-
+            var y = Math.sin(deltaLon) * Math.cos(radLat2);
+            var x = Math.cos(radLat1) * Math.sin(radLat2) - Math.sin(radLat1) * Math.cos(radLat2) * Math.cos(deltaLon);
+            var bearing = Math.atan2(y, x) * (180 / Math.PI);
             return (bearing + 360) % 360;
         }
     </script>
 </body>
 </html>
+
