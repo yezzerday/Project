@@ -5,25 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Navigation</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
- 
-    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-camera@1.7.2/dist/aframe-gps-camera.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-entity-place@1.8.0/dist/aframe-gps-entity-place.min.js"></script>
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
-
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; }
         .top-bar { position: absolute; top: 0; width: 100%; height: 50px; background-color: rgba(0, 0, 0, 0.5); color: white; display: flex; align-items: center; justify-content: center; }
-        .bottom-bar { position: absolute; bottom: 0; width: 100%; height: 150px; background-color: rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #map { width: 100px; height: 100px; border-radius: 10px; border: 2px solid white; margin-top: 10px; }
+        .bottom-bar { position: absolute; bottom: 0; width: 100%; height: 100px; background-color: rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .distance-info { color: white; font-size: 20px; }
-        .status-text { color: white; font-size: 24px; text-align: center; }
+        .status-text { color: white; font-size: 24px; }
     </style>
 </head>
 <body>
     <a-scene embedded arjs="sourceType: webcam;">
         <a-camera gps-camera rotation-reader></a-camera>
-        <a-entity id="route" position="0 0 0"></a-entity>
+        <a-entity id="arrow" gltf-model="image/arrow.gltf" scale="2 2 2" position="0 0 -5"></a-entity>
     </a-scene>
 
     <div class="top-bar">
@@ -32,84 +26,38 @@
 
     <div class="bottom-bar">
         <div class="distance-info" id="distance">Distance: -- m</div>
-        <div id="map"></div>
     </div>
 
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11',
-            zoom: 15
-        });
+        // ตั้งค่าพิกัดจุดหมาย
+        var destinationLat = 16.751877244208234 ; // แทนที่ด้วยพิกัดจริง
+        var destinationLng = 100.1967383737579; // แทนที่ด้วยพิกัดจริง
 
-        var destinationLat = localStorage.getItem('destinationLat');
-        var destinationLng = localStorage.getItem('destinationLng');
-
-        // Initialize the route
-        if (destinationLat && destinationLng) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var userLat = position.coords.latitude;
-                var userLng = position.coords.longitude;
-
-                map.setCenter([userLng, userLat]);
-                getRoute(userLat, userLng, destinationLat, destinationLng);
-            });
-        }
-
-        function getRoute(startLat, startLng, endLat, endLng) {
-            var url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLng},${startLat};${endLng},${endLat}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    var route = data.routes[0].geometry.coordinates;
-                    drawRoute(route);
-                });
-        }
-
-        function drawRoute(route) {
-            var points = route.map(coord => {
-                return {
-                    type: 'a-entity',
-                    geometry: { primitive: 'box', width: 1, height: 0.1, depth: 1 },
-                    material: { color: 'blue' },
-                    position: { x: coord[0], y: 0, z: coord[1] }
-                };
-            });
-
-            points.forEach(point => {
-                var entity = document.createElement('a-entity');
-                entity.setAttribute('geometry', point.geometry);
-                entity.setAttribute('material', point.material);
-                entity.setAttribute('position', point.position);
-                document.getElementById('route').appendChild(entity);
-            });
-        }
-
-        // Additional functions for distance calculation and direction updating
         navigator.geolocation.watchPosition(function(position) {
             var userLat = position.coords.latitude;
             var userLng = position.coords.longitude;
+
             var distance = calculateDistance(userLat, userLng, destinationLat, destinationLng);
             document.getElementById('distance').textContent = `Distance: ${distance.toFixed(2)} meters`;
+
             updateStatus(userLat, userLng, destinationLat, destinationLng);
         });
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            var R = 6371000; // Earth's radius in meters
+            var R = 6371000; // รัศมีของโลก (เมตร)
             var latDiff = (lat2 - lat1) * Math.PI / 180;
             var lonDiff = (lon2 - lon1) * Math.PI / 180;
             var a = Math.sin(latDiff / 2) * Math.sin(latDiff / 2) +
                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                     Math.sin(lonDiff / 2) * Math.sin(lonDiff / 2);
             var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            return R * c; // ผลลัพธ์เป็นเมตร
         }
 
         function updateStatus(userLat, userLng, destinationLat, destinationLng) {
             var angle = calculateBearing(userLat, userLng, destinationLat, destinationLng);
-            var statusText = 'Go straight';
+            var statusText = '';
+
             if (angle >= -45 && angle < 45) {
                 statusText = 'Go straight';
             } else if (angle >= 45 && angle < 135) {
@@ -117,6 +65,7 @@
             } else {
                 statusText = 'Turn right';
             }
+
             document.getElementById('status-text').textContent = statusText;
         }
 
@@ -131,3 +80,4 @@
     </script>
 </body>
 </html>
+
