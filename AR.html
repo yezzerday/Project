@@ -3,14 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location-based WebApp</title>
+    <title>AR Location WebApp</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script> 
-        THREEx.ArToolkitContext.baseURL = 'https://raw.githack.com/jeromeetienne/ar.js/master/three.js/'
-    </script>
-    
     <style>
         body, html {
             margin: 0;
@@ -22,91 +17,59 @@
     </style>
 </head>
 <body>
-    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
+    <a-scene vr-mode-ui="enabled: false" arjs="sourceType: webcam; debugUIEnabled: false">
         <a-camera gps-camera rotation-reader></a-camera>
-        <!-- โมเดล AR ที่จะปรากฏเมื่อใกล้ตำแหน่งผู้ใช้ -->
-        <a-entity id="ar-model" gltf-model="./image/fox.gltf" rotation="0 180 0" scale="0.15 0.15 0.15" gps-entity-place="latitude: 16.751799215446834; longitude: 100.1970026220891;" visible="false"></a-entity>
-    </a-scene>
 
-    <script>
-        // ข้อมูลตำแหน่งของสถานที่ต่าง ๆ
-        const locations = [
-            { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577] },
-            { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877] },
-            { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552] },
-            { name: 'พิพิธภัณฑ์ผ้า', coordinates: [100.19368528595756, 16.750747650743115] },
-            { name: 'หอพักนิสิต 1-9', coordinates: [100.19920506247398, 16.736488954997554] },
-            { name: 'หอพักนิสิต 10-15', coordinates: [100.20002954791143, 16.737361857468215] },
-            { name: 'ศูนย์อาหาร NU Canteen', coordinates: [100.19349481924687, 16.744141844488965] },
-            { name: 'โรงอาหารหอใน', coordinates: [100.19896605764515, 16.737455358262423] },
-            { name: 'ลานจอดรถ ใกล้ศูนย์หนังสือ', coordinates: [100.19363458145814, 16.744872718523496] },
-            { name: 'ลานจอดรถ ใกล้โรงพยาบาล', coordinates: [100.18931709684061, 16.749730393172033] },
-            { name: 'ลานจอดรถ ใกล้คณะพยาบาล', coordinates: [100.18975791382513, 16.7457527358264] },
-            { name: 'test2',  coordinates:  [100.19705773025863,16.7518275884201]  },
-            { name: 'test1',  coordinates:   [100.1969277610163,16.751808077931962]  }
-        ];
+        <!-- ไอคอนและข้อความระยะทางของสถานที่ต่าง ๆ -->
+        <script>
+            const locations = [
+                { name: 'สนามเปตอง', coordinates: [100.19681171535687, 16.74690021014577], icon: 'muscle.png' },
+                { name: 'NUฟิตเนส', coordinates: [100.197390492671, 16.747186578738877], icon: 'muscle.png' },
+                { name: 'อาคารกีฬาอเนกประสงค์', coordinates: [100.19329368316133, 16.750876071728552], icon: 'muscle.png' },
+                { name: 'พิพิธภัณฑ์ผ้า', coordinates: [100.19368528595756, 16.750747650743115], icon: 'museum.png' },
+                { name: 'หอพักนิสิต 1-9', coordinates: [100.19920506247398, 16.736488954997554], icon: 'food.png' },
+                { name: 'หอพักนิสิต 10-15', coordinates: [100.20002954791143, 16.737361857468215], icon: 'food.png' },
+                { name: 'ศูนย์อาหาร NU Canteen', coordinates: [100.19349481924687, 16.744141844488965], icon: 'food.png' },
+                { name: 'โรงอาหารหอใน', coordinates: [100.19896605764515, 16.737455358262423], icon: 'food.png' },
+                { name: 'ลานจอดรถ ใกล้ศูนย์หนังสือ', coordinates: [100.19363458145814, 16.744872718523496], icon: 'parking.png' },
+                { name: 'ลานจอดรถ ใกล้โรงพยาบาล', coordinates: [100.18931709684061, 16.749730393172033], icon: 'parking.png' },
+                { name: 'ลานจอดรถ ใกล้คณะพยาบาล', coordinates: [100.18975791382513, 16.7457527358264], icon: 'parking.png' },
+                { name: 'test2',  coordinates:  [100.19705773025863,16.7518275884201] icon: 'hospital.png' },
+              { name: 'test1',  coordinates:   [100.1969277610163,16.751808077931962] icon: 'hospital.png' }
+                // เพิ่มสถานที่อื่น ๆ อีกตามที่คุณมี
+            ];
 
-        // ฟังก์ชันขอสิทธิ์เข้าถึงตำแหน่ง
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
-                console.log('User Latitude:', userLat);
-                console.log('User Longitude:', userLon);
+            const userLat = 16.7412542; // ตัวอย่างพิกัดผู้ใช้
+            const userLon = 100.2039586;
 
-                // ฟังก์ชันคำนวณระยะห่างระหว่างผู้ใช้กับตำแหน่งที่ตั้ง
-                function Distance(lat1, lon1, lat2, lon2) {
-                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
-                    const dLat = (lat2 - lat1) * Math.PI / 180;
-                    const dLon = (lon2 - lon1) * Math.PI / 180;
-                    const a = 
-                        0.5 - Math.cos(dLat)/2 + 
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                        (1 - Math.cos(dLon)) / 2;
-                    return R * 2 * Math.asin(Math.sqrt(a));
-                }
+            // คำนวณระยะทางจากผู้ใช้ไปยังสถานที่
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = 0.5 - Math.cos(dLat)/2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * (1 - Math.cos(dLon)) / 2;
+                return R * 2 * Math.asin(Math.sqrt(a));
+            }
 
-                // ค้นหาตำแหน่งที่อยู่ใกล้กับผู้ใช้ที่สุด
-                let closestLocation = null;
-                let closestDistance = Infinity;
+            // วนลูปสร้างไอคอนและข้อความระยะทาง
+            locations.forEach(location => {
+                const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
+                
+                const icon = document.createElement('a-image');
+                icon.setAttribute('gps-entity-place', `latitude: ${location.coordinates[1]}; longitude: ${location.coordinates[0]}`);
+                icon.setAttribute('src', `image/${location.icon}`); <!-- เปลี่ยนเส้นทางโฟลเดอร์เป็น image/ -->
+                icon.setAttribute('scale', '10 10 10');
 
-                locations.forEach(location => {
-                    const distance = Distance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
-                    console.log('Distance to', location.name, ':', distance, 'km');
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                        closestLocation = location;
-                    }
-                });
+                const label = document.createElement('a-text');
+                label.setAttribute('value', `${location.name}: ${distance.toFixed(2)} km away`);
+                label.setAttribute('align', 'center');
+                label.setAttribute('position', '0 -1.5 0');
+                label.setAttribute('scale', '10 10 10');
 
-                // ถ้าพบสถานที่ใกล้ ให้ตั้งตำแหน่งโมเดล AR ให้ตรงกับสถานที่นั้น
-                if (closestLocation) {
-                    const arModel = document.getElementById('ar-model');
-                    
-                    // ตรวจสอบและตั้งค่าพิกัดที่ถูกต้อง
-                    const latitude = closestLocation.coordinates[1];
-                    const longitude = closestLocation.coordinates[0];
-                    
-                    arModel.setAttribute('gps-entity-place', {
-                        latitude: latitude,
-                        longitude: longitude
-                    });
-                    
-                    // ตั้งค่าให้มองเห็นโมเดล
-                    arModel.setAttribute('visible', 'true');
-                    
-                    // ตรวจสอบค่าพิกัดที่ถูกตั้งไว้
-                    console.log('AR Model Set at:', latitude, longitude);
-                }
-            }, function(error) {
-                console.error('Error getting user location:', error);
+                icon.appendChild(label);
+                document.querySelector('a-scene').appendChild(icon);
             });
-        } else {
-            alert('Geolocation is not supported by your browser');
-        }
-    </script>
-    
+        </script>
+    </a-scene>
 </body>
 </html>
-
-
