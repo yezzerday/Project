@@ -1,79 +1,211 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Navigation</title>
-    <!-- Import AR.js library -->
+    <!-- A-Frame and AR.js Libraries -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
-    <!-- Import Mapbox GL JS -->
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-camera@1.7.2/dist/aframe-gps-camera.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-entity-place@1.8.0/dist/aframe-gps-entity-place.min.js"></script>
+    
+    <!-- Mapbox Libraries -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+
+        /* Style for top bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
             width: 100%;
-            overflow: hidden;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content:center;
+            padding: 0 10px;
+            z-index: 10;
+        }
+
+        /* Style for bottom bar */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        /* Style for minimap */
+        #map {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            border: 2px solid white;
+            z-index: 20;
+            margin-top: 10px;
+        }
+
+        /* Style for distance information */
+        .distance-info {
+            color: white;
+            font-size: 20px;
+        }
+
+        /* Style for mobile devices */
+        @media (max-width: 768px) {
+            .top-bar { height: 60px; }
+            .bottom-bar { height: 120px; }
+            .distance-info { font-size: 16px; }
+        }
+
+        /* Style for PC devices */
+        @media (min-width: 769px) {
+            .top-bar { height: 70px; }
+            .bottom-bar { height: 150px; }
+            .distance-info { font-size: 24px; }
+        }
+
+        /* Hide the bottom bar by default */
+        .bottom-bar.hidden {
+            transform: translateY(100%);
         }
     </style>
 </head>
 <body>
-    <!-- AR.js Scene -->
-    <a-scene vr-mode-ui="enabled: false" embedded arjs>
-        <!-- Define the camera -->
+    <!-- AR Scene -->
+    <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam;">
         <a-camera gps-camera rotation-reader></a-camera>
-
-        <!-- 3D arrow for navigation -->
-        <a-box gps-entity-place="latitude: 0; longitude: 0;" material="color: red;" scale="1 1 1"></a-box>
+        
+        <a-entity id="arrow" 
+                  gltf-model="arrow.gltf" 
+                  scale="2 2 2" 
+                  gps-entity-place 
+                  rotation="0 180 0"
+                  position="0 0 0">
+        </a-entity>
     </a-scene>
 
-    <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';  // ใช้ Access Token ของคุณเอง
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div id="status-icon" ></div>
+        <h1 id="status-text">Go straight</h1>
+    </div>
 
-        // Get user's current location
-        navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {
-            enableHighAccuracy: true
+    <!-- Bottom Bar with minimap -->
+    <div class="bottom-bar hidden" id="bottom-bar">
+        <div class="distance-info" id="distance">Distance: -- m</div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        // Mapbox setup
+        mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            zoom: 15
         });
 
-        function successLocation(position) {
-            const userCoords = [position.coords.longitude, position.coords.latitude];
+        // Fetch destination from localStorage
+        var destinationLat = localStorage.getItem('destinationLat');
+        var destinationLng = localStorage.getItem('destinationLng');
 
-            // Get destination from localStorage
-            const destinationData = JSON.parse(localStorage.getItem('destination'));
-            const destinationCoords = destinationData.coordinates;
-
-            // Fetch directions from Mapbox Directions API
-            fetch(
-                `https://api.mapbox.com/directions/v5/mapbox/driving/${userCoords[0]},${userCoords[1]};${destinationCoords[0]},${destinationCoords[1]}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`
-            )
-                .then(response => response.json())
-                .then(data => {
-                    const route = data.routes[0].geometry.coordinates;
-                    render3DPath(route);
-                });
+        if (destinationLat && destinationLng) {
+            new mapboxgl.Marker({ color: 'red' })
+                .setLngLat([destinationLng, destinationLat])
+                .addTo(map);
+            document.getElementById('arrow').setAttribute('gps-entity-place', `latitude: ${destinationLat}; longitude: ${destinationLng};`);
         }
 
-        function errorLocation() {
-            alert('Unable to retrieve your location');
+        // User position from GPS
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLng = position.coords.longitude;
+
+            new mapboxgl.Marker({ color: 'blue' })
+                .setLngLat([userLng, userLat])
+                .addTo(map);
+
+            map.setCenter([userLng, userLat]);
+        });
+
+        // Update user position in real-time
+        navigator.geolocation.watchPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLng = position.coords.longitude;
+
+            map.setCenter([userLng, userLat]);
+
+            var distance = calculateDistance(userLat, userLng, destinationLat, destinationLng);
+            document.getElementById('distance').textContent = `Distance: ${distance.toFixed(2)} meters`;
+
+            // Update route status
+            updateStatus(userLat, userLng, destinationLat, destinationLng);
+
+            document.getElementById('bottom-bar').classList.remove('hidden');
+        });
+
+        // Calculate distance using Haversine formula
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            var R = 6371e3; // Earth radius in meters
+            var lat1Rad = degreesToRadians(lat1);
+            var lat2Rad = degreesToRadians(lat2);
+            var diffLat = degreesToRadians(lat2 - lat1);
+            var diffLng = degreesToRadians(lng2 - lng1);
+
+            var a = Math.sin(diffLat / 2) * Math.sin(diffLat / 2) +
+                    Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                    Math.sin(diffLng / 2) * Math.sin(diffLng / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
         }
 
-        function render3DPath(coordinates) {
-            coordinates.forEach(coord => {
-                const latitude = coord[1];
-                const longitude = coord[0];
+        function degreesToRadians(degrees) {
+            return degrees * Math.PI / 180;
+        }
 
-                // Create 3D box (representing the path) in AR.js
-                const box = document.createElement('a-box');
-                box.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude}`);
-                box.setAttribute('material', 'color: blue; opacity: 0.8;');
-                box.setAttribute('scale', '1 1 1');
-                document.querySelector('a-scene').appendChild(box);
-            });
+        // Update route status
+        function updateStatus(userLat, userLng, destinationLat, destinationLng) {
+            var angle = calculateBearing(userLat, userLng, destinationLat, destinationLng);
+
+            if (angle >= -45 && angle < 45) {
+                document.getElementById('status-text').textContent = 'Go straight';
+                document.getElementById('status-icon').innerHTML = '<img src="image/straight.png" alt="Go straight" />';
+            } else if (angle >= 45 && angle < 135) {
+                document.getElementById('status-text').textContent = 'Turn left';
+                document.getElementById('status-icon').innerHTML = '<img src="image/left.png" alt="Turn left" />';
+            } else {
+                document.getElementById('status-text').textContent = 'Turn right';
+                document.getElementById('status-icon').innerHTML = '<img src="image/right.png" alt="Turn right" />';
+            }
+        }
+
+        // Calculate bearing angle
+        function calculateBearing(lat1, lng1, lat2, lng2) {
+            var lat1Rad = degreesToRadians(lat1);
+            var lat2Rad = degreesToRadians(lat2);
+            var diffLng = degreesToRadians(lng2 - lng1);
+
+            var y = Math.sin(diffLng) * Math.cos(lat2Rad);
+            var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - 
+                    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(diffLng);
+            var bearing = Math.atan2(y, x) * 180 / Math.PI;
+
+            return (bearing + 360) % 360;
         }
     </script>
 </body>
 </html>
-
