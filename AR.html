@@ -59,15 +59,15 @@
                     const icon = document.createElement('a-image');
                     icon.setAttribute('gps-entity-place', `latitude: ${location.coordinates[1]}; longitude: ${location.coordinates[0]}`);
                     icon.setAttribute('src', `image/${location.icon}`);
-                    icon.setAttribute('scale', '10 10 10');
-                    icon.setAttribute('look-at', '[camera]'); // ให้ไอคอนหันหน้าเข้าหากล้อง
+                    icon.setAttribute('scale', '20  20');
+                    icon.setAttribute('rotation', '0 180 0'); 
 
                     const label = document.createElement('a-text');
                     label.setAttribute('value', `${location.name}: ${distance.toFixed(2)} km away`);
                     label.setAttribute('align', 'center');
-                    label.setAttribute('position', '0 -1.5 0');
-                    label.setAttribute('scale', '10 10 10');
-
+                    label.setAttribute('position', '0 -0.5 0');
+                    label.setAttribute('scale', '10  10');
+                    
                     icon.appendChild(label);
                     document.querySelector('a-scene').appendChild(icon);
                 });
