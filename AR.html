@@ -35,39 +35,44 @@
                 { name: 'ลานจอดรถ ใกล้โรงพยาบาล', coordinates: [100.18931709684061, 16.749730393172033], icon: 'parking.png' },
                 { name: 'ลานจอดรถ ใกล้คณะพยาบาล', coordinates: [100.18975791382513, 16.7457527358264], icon: 'parking.png' },
                 { name: 'test2',  coordinates:  [100.19705773025863,16.7518275884201], icon: 'hospital.png' },
-              { name: 'test1',  coordinates:   [100.1969277610163,16.751808077931962] ,icon: 'hospital.png' }
-                // เพิ่มสถานที่อื่น ๆ อีกตามที่คุณมี
+                { name: 'test1',  coordinates:   [100.1969277610163,16.751808077931962], icon: 'hospital.png' }
             ];
 
-            const userLat = 16.7412542; // ตัวอย่างพิกัดผู้ใช้
-            const userLon = 100.2039586;
+            // เข้าถึงพิกัดของผู้ใช้
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLat = position.coords.latitude;
+                const userLon = position.coords.longitude;
 
-            // คำนวณระยะทางจากผู้ใช้ไปยังสถานที่
-            function calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; // รัศมีโลกเป็นกิโลเมตร
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = 0.5 - Math.cos(dLat)/2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * (1 - Math.cos(dLon)) / 2;
-                return R * 2 * Math.asin(Math.sqrt(a));
-            }
+                // คำนวณระยะทางจากผู้ใช้ไปยังสถานที่
+                function calculateDistance(lat1, lon1, lat2, lon2) {
+                    const R = 6371; // รัศมีโลกเป็นกิโลเมตร
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a = 0.5 - Math.cos(dLat) / 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * (1 - Math.cos(dLon)) / 2;
+                    return R * 2 * Math.asin(Math.sqrt(a));
+                }
 
-            // วนลูปสร้างไอคอนและข้อความระยะทาง
-            locations.forEach(location => {
-                const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
-                
-                const icon = document.createElement('a-image');
-                icon.setAttribute('gps-entity-place', `latitude: ${location.coordinates[1]}; longitude: ${location.coordinates[0]}`);
-                icon.setAttribute('src', `image/${location.icon}`); <!-- เปลี่ยนเส้นทางโฟลเดอร์เป็น image/ -->
-                icon.setAttribute('scale', '10 10 10');
+                // วนลูปสร้างไอคอนและข้อความระยะทาง
+                locations.forEach(location => {
+                    const distance = calculateDistance(userLat, userLon, location.coordinates[1], location.coordinates[0]);
+                    
+                    const icon = document.createElement('a-image');
+                    icon.setAttribute('gps-entity-place', `latitude: ${location.coordinates[1]}; longitude: ${location.coordinates[0]}`);
+                    icon.setAttribute('src', `image/${location.icon}`);
+                    icon.setAttribute('scale', '10 10 10');
+                    icon.setAttribute('look-at', '[camera]'); // ให้ไอคอนหันหน้าเข้าหากล้อง
 
-                const label = document.createElement('a-text');
-                label.setAttribute('value', `${location.name}: ${distance.toFixed(2)} km away`);
-                label.setAttribute('align', 'center');
-                label.setAttribute('position', '0 -1.5 0');
-                label.setAttribute('scale', '10 10 10');
+                    const label = document.createElement('a-text');
+                    label.setAttribute('value', `${location.name}: ${distance.toFixed(2)} km away`);
+                    label.setAttribute('align', 'center');
+                    label.setAttribute('position', '0 -1.5 0');
+                    label.setAttribute('scale', '10 10 10');
 
-                icon.appendChild(label);
-                document.querySelector('a-scene').appendChild(icon);
+                    icon.appendChild(label);
+                    document.querySelector('a-scene').appendChild(icon);
+                });
+            }, err => {
+                console.error("Unable to retrieve your location due to " + err.message);
             });
         </script>
     </a-scene>
