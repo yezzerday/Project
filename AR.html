@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location Demo</title>
+    <title>AR  Demo</title>
     <!-- A-Frame สำหรับสร้างและแสดงผล AR -->
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <!-- AR.js สำหรับใช้งาน AR บน A-Frame ด้วย GPS -->
@@ -18,7 +18,7 @@
         arjs="sourceType: webcam; debugUIEnabled: false;">
         
         <!-- กล้อง AR ที่ใช้ตำแหน่ง GPS -->
-        <a-camera gps-camera rotation-reader></a-camera>
+        <a-camera gps-camera="gpsMinDistance: 5;" rotation-reader></a-camera>
 
         <!-- สถานที่จะแสดงที่นี่ -->
         <a-entity id="places-icons"></a-entity>
@@ -30,29 +30,29 @@
         const places = [
             {
                 name: "Cafe",
-                latitude: 16.751810773166465,
-                longitude: 100.19707168896952,
+                latitude: 16.75216255070639, 
+                longitude: 100.19692711250192,
                 type: "cafe",  // ประเภทของสถานที่
                 icon: "image/cafe.png"  // ไอคอนสำหรับสถานที่
             },
             {
                 name: "Restaurant",
-                latitude: 16.7521611607277, 
-                longitude: 100.19693150053436,
+                latitude: 16.751980533811853, 
+                longitude:100.19671114681755,
                 type: "food",
                 icon: "image/food.png"
             },
             {
                 name: "Gym",
-                latitude: 16.751832524216063,
-                longitude: 100.19705827323692,
+                latitude: 16.751814013338517, 
+                longitude:100.19692565632594,
                 type: "gym",
                 icon: "image/muscle.png"
             },
             {
                 name: "Hospital",
-                latitude: 16.75180850699812,
-                longitude: 100.19700026695041,
+                latitude:16.751840826512645,
+                longitude:  100.19705314160306,
                 type: "hospital",
                 icon: "image/hospital.png"
             },
@@ -110,14 +110,16 @@
                     const icon = document.createElement('a-image');
                     icon.setAttribute('src', place.icon);
                     icon.setAttribute('scale', '5 5');
-                    icon.setAttribute('position', '0 0 0');
+                    icon.setAttribute('position', '0 0 -20');
+                    icon.setAttribute('look-at', '[gps-camera]'); // หันเข้าหากล้องเสมอ
 
                     // ข้อความชื่อสถานที่และระยะทาง
                     const textLabel = document.createElement('a-text');
                     textLabel.setAttribute('value', `${place.name} (${distance} km)`);
                     textLabel.setAttribute('align', 'center');
-                    textLabel.setAttribute('position', '0 -5 0');  // ปรับตำแหน่งข้อความให้อยู่ใต้ไอคอน
+                    textLabel.setAttribute('position', '0 -5 -20');  // ปรับตำแหน่งข้อความให้อยู่ใต้ไอคอน
                     textLabel.setAttribute('scale', '10 10');
+                    textLabel.setAttribute('look-at', '[gps-camera]'); // หันเข้าหากล้องเสมอ
 
                     // เพิ่มไอคอนและข้อความเข้าใน entity หลัก
                     placeEntity.appendChild(icon);
