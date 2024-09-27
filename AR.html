@@ -22,7 +22,7 @@
     </style>
 </head>
 <body>
-    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
+    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
         <a-camera gps-camera rotation-reader></a-camera>
         <!-- ไอคอน AR จะถูกแสดงที่ตำแหน่งใกล้กับผู้ใช้ -->
         <a-image id="ar-icon" gps-entity-place="latitude: 16.751799215446834; longitude: 100.1970026220891;" visible="false" src="image/point.png" scale="5 5 5"></a-image>
@@ -105,6 +105,7 @@
                     });
                     arIcon.setAttribute('src', iconType);
                     arIcon.setAttribute('visible', 'true');
+                    console.log('AR Model Set at:', closestLocation.coordinates[1], closestLocation.coordinates[0]);
                     console.log('Showing AR Icon at:', closestLocation.coordinates);
                 }
             }, function(error) {
