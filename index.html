@@ -43,20 +43,12 @@
         width="3"
         height="2"
         look-at="[gps-camera]"
-        visible="false" <!-- รูปจะไม่แสดงจนกว่าจะคลิก -->
+        visible="true" <!-- ทำให้รูปแสดงทันที -->
       ></a-plane>
 
       <!-- กล้อง GPS -->
       <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
-
-    <script>
-      // เมื่อคลิกที่โมเดล 3D ให้แสดงรูปภาพ
-      document.getElementById('arModel').addEventListener('click', function () {
-        const imagePlane = document.getElementById('imagePlane');
-        // เปลี่ยนให้รูปภาพแสดงขึ้นมา
-        imagePlane.setAttribute('visible', 'true');
-      });
-    </script>
   </body>
 </html>
+
