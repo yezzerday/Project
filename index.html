@@ -23,26 +23,41 @@
     >
       <!-- โมเดล 3D -->
       <a-entity
+        id="arModel"
         gltf-model="url(image/park.glb)"
         scale="0.01 0.01 0.01"
-        position="0 0 -50"
+        position="0 0 -50" <!-- ปรับตำแหน่งของโมเดล -->
         look-at="[gps-camera]"
         gps-entity-place="latitude: 16.754378327715905; longitude: 100.19544218338369;"
+        raycastable
+        event-set__mouseenter="scale: 0.02 0.02 0.02"
+        event-set__mouseleave="scale: 0.01 0.01 0.01"
       ></a-entity>
 
       <!-- รูปภาพแสดงใน 3D -->
       <a-plane
+        id="imagePlane"
         src="url(image/sci.png)"
-        position="0 1 -5"
+        position="0 1 -5" <!-- กำหนดตำแหน่งให้ห่างจากกล้อง -->
         rotation="0 0 0"
         width="3"
         height="2"
         look-at="[gps-camera]"
+        visible="false" <!-- รูปจะไม่แสดงจนกว่าจะคลิก -->
       ></a-plane>
 
       <!-- กล้อง GPS -->
       <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
+
+    <script>
+      // เมื่อคลิกที่โมเดล 3D ให้แสดงรูปภาพ
+      document.getElementById('arModel').addEventListener('click', function () {
+        const imagePlane = document.getElementById('imagePlane');
+        // เปลี่ยนให้รูปภาพแสดงขึ้นมา
+        imagePlane.setAttribute('visible', 'true');
+      });
+    </script>
   </body>
 </html>
 
