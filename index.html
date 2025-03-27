@@ -1,88 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>GeoAR.js demo</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-look-at-component@1.0.0/dist/aframe-look-at-component.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
-    <style>
-      /* CSS สำหรับแสดง Popup */
-      #popup {
-        display: none; /* ซ่อน popup */
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        padding: 20px;
-        background-color: white;
-        border: 1px solid black;
-        z-index: 1000;
-        width: 80%;
-        max-width: 400px;
-      }
-
-      #popup button {
-        margin-top: 10px;
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-      }
-
-      #popup button:hover {
-        background-color: #0056b3;
-      }
-
-      /* ให้แน่ใจว่า AR scene ปรับขนาดได้ดีในมือถือ */
-      a-scene {
-        width: 100%;
-        height: 100vh;
-      }
-    </style>
   </head>
 
   <body>
-    <!-- Popup HTML -->
-    <div id="popup">
-      <h2>Model Clicked!</h2>
-      <p>You clicked on the 3D model. Here is some information.</p>
-      <button onclick="closePopup()">Close</button>
-    </div>
-
     <a-scene
       vr-mode-ui="enabled: false"
       arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
     >
       <!-- โมเดล 3D แทนข้อความ -->
       <a-entity
-        id="arModel"
         gltf-model="url(image/park.glb)"
-        scale="0.01 0.01 0.01"
-        position="0 0 -50"
-        look-at="[gps-camera]"
-        gps-entity-place="latitude: 16.754378327715905; longitude: 100.19544218338369;"
-        raycastable
-        event-set__mouseenter="scale: 0.02 0.02 0.02"
-        event-set__mouseleave="scale: 0.01 0.01 0.01"
+        scale="0.05 0.05 0.05"
+        position="0 0 -50" 
+        look-at="[gps-camera]" 
+        gps-entity-place="latitude: 16.74194826922346; longitude:  100.1941940234988;"
+       
       ></a-entity>
 
       <!-- กล้อง GPS -->
       <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
-
-    <script>
-      // ฟังก์ชันที่ใช้ในการเปิด Popup
-      document.getElementById('arModel').addEventListener('click', function () {
-        document.getElementById('popup').style.display = 'block';
-      });
-
-      // ฟังก์ชันที่ใช้ในการปิด Popup
-      function closePopup() {
-        document.getElementById('popup').style.display = 'none';
-      }
-    </script>
   </body>
 </html>
+
